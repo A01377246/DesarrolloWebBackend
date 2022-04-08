@@ -16,25 +16,22 @@ app.secret_key = "super secret key"
 
 @app.route('/')
 def home():
-    email = None
-
 
     if "email" in session:
         email = session["email"]
         return render_template('index.html', error = email)
     else:
-        return render_template('login.html', error = email)
+        return render_template('login.html')
 
 
 @app.route('/login', methods = ["GET", "POST"])
 def login():
-    email = None
     if "email" in session:
-        return render_template("index.html", error = email)
+        return render_template("index.html", error = session["email"])
     else:
 
         if(request.method == "GET"):
-            return render_template("login.html", error= email)
+            return render_template("login.html")
         else:
             email = request.form["email"]
             password = request.form["password"]
