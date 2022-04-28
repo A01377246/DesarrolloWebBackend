@@ -5,6 +5,9 @@ import datetime
 
 import pymongo
 
+from twilio.rest import Client
+
+
 
 # FlASK
 #############################################################
@@ -27,6 +30,12 @@ cuentas = db.alumno
 #############################################################
 
 
+# Twilio
+#############################################################
+#account_sid = ""
+#auth_token = ""
+#TwilioClient = Client(account_sid, auth_token)
+#############################################################
 
 
 
@@ -86,3 +95,72 @@ def usuarios():
     for doc in cursor:
         users.append(doc)
         return render_template("/usuarios.html", data = users)
+
+@app.route("/insert", methods = ["POST"])
+def insertUsers():
+
+    user = {
+        "matricula": request.form["matricula"],
+        "nombre":request.form['nombre'],
+        "correo":request.form['correo'],
+        "contrasena": request.form['contrasena'],
+    }
+
+  
+
+
+    try:
+        cuentas.insert_one(user)
+        comogusten = TwilioClient.messages.create(
+            from_="whatsapp:+14155238886",
+            body="El usuario %s se agregó a tu pagina web" % (
+                request.form["nombre"]),
+            to="whatsapp:+5215514200581"
+        )
+        print(comogusten.sid)
+
+        return redirect(url_for("usuarios"))
+    except Exception as e:
+        return "<p>El servicio no está disponible =>: %s %s" % type(e), e
+
+
+@app.route("/find_one/<matricula>")
+def find_one(matricula):
+    try:
+        user = cuentas.find_one({"matricula": (matricula)})
+        if user == None:
+            return "<p>La matricula %s nó existe</p>" % (matricula)
+        else:
+            return "<p>Encontramos: %s </p>" % (user)
+    except Exception as e:
+        return "%s" % e
+
+@app.route("/delete/<matricula>")
+def delete_one(matricula):
+    try:
+        user = cuentas.delete_one({"matricula": (matricula)})
+        if user.deleted_count == None:
+            return "<p>La matricula %s nó existe</p>" % (matricula)
+        else:
+            #return "<p>Eliminamos %d matricula: %s </p>" % (user.deleted_count, matricula)
+            return redirect(url_for("usuarios"))
+    except Exception as e:
+        return "%s" % e
+
+@app.route("/update", methods = ["POST"])
+def update():
+    try:
+        filter = {"matricula": request.form["matricula"]} #Create a search object
+        user = {"$set": {
+            "nombre": request.form["matricula"], #only update field matricula
+            "contrasena": request.form["contrasena"]
+        }}
+        cuentas.update_one(filter, user)
+        return redirect(url_for("usuarios"))
+
+    except Exception as e:
+        return "%s" % e
+
+@app.route('/create')
+def create():
+    return render_template('Create.html')
