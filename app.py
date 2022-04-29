@@ -52,21 +52,20 @@ def login():
     if "email" in session:
         return render_template("index.html", error = session["email"])
     else:
-
         if(request.method == "GET"):
             return render_template("login.html")
         else:
-            email = request.form["correo"]
-            registrationNo = request.form["matricula"]
-            password = request.form["contrasena"]
-            userSearch = cuentas.find({"correo": (email), "contrasena": (password)})
-
-            if userSearch == None:
-                return render_template('login.html', data = None)
+            email = request.form["email"]
+            #registrationNo = request.form["matricula"]
+            password = request.form["password"]
+            userSearch = cuentas.find_one({"correo": (email), "contrasena": (password)}) #Check database for finding email and password that matches
+            if userSearch != None:
+                  session["email"] = email
+                  return render_template("index.html", error = email)
+                  
             else:
-                session["email"] = email
-                return render_template("index.html", error = email)
-                
+                 return render_template('login.html', data = None)
+              
 
             
 
