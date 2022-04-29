@@ -22,7 +22,7 @@ app.secret_key = "super secret key"
 
 # Mongo DB
 #############################################################
-mongodb_key = "mongodb+srv://emeraldUser:<password>@cluster0.fyhsi.mongodb.net/myFirstDatabase?retryWrites=true&w=majority" #my own db
+mongodb_key = "mongodb+srv://testUser123:123Pass@cluster0.fyhsi.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
 client = pymongo.MongoClient(
     mongodb_key, tls=True, tlsAllowInvalidCertificates = True)
 db = client.Escuela
@@ -36,9 +36,6 @@ cuentas = db.alumno
 #auth_token = ""
 #TwilioClient = Client(account_sid, auth_token)
 #############################################################
-
-
-
 
 @app.route('/')
 def home():
@@ -59,10 +56,19 @@ def login():
         if(request.method == "GET"):
             return render_template("login.html")
         else:
-            email = request.form["email"]
-            password = request.form["password"]
-            session["email"] = email
-            return render_template("index.html", error = email)
+            email = request.form["correo"]
+            registrationNo = request.form["matricula"]
+            password = request.form["contrasena"]
+            userSearch = cuentas.find({"correo": (email), "contrasena": (password)})
+
+            if userSearch == None:
+                return render_template('login.html', data = None)
+            else:
+                session["email"] = email
+                return render_template("index.html", error = email)
+                
+
+            
 
 @app.route("/prueba")
 def prueba():
@@ -94,7 +100,7 @@ def usuarios():
     users = []
     for doc in cursor:
         users.append(doc)
-        return render_template("/usuarios.html", data = users)
+    return render_template("/usuarios.html", data = users)
 
 @app.route("/insert", methods = ["POST"])
 def insertUsers():
@@ -106,20 +112,19 @@ def insertUsers():
         "contrasena": request.form['contrasena'],
     }
 
-  
-
-
     try:
         cuentas.insert_one(user)
-        comogusten = TwilioClient.messages.create(
+        
+        """comogusten = TwilioClient.messages.create(
             from_="whatsapp:+14155238886",
             body="El usuario %s se agregó a tu pagina web" % (
                 request.form["nombre"]),
             to="whatsapp:+5215514200581"
         )
-        print(comogusten.sid)
+        print(comogusten.sid)"""
 
         return redirect(url_for("usuarios"))
+
     except Exception as e:
         return "<p>El servicio no está disponible =>: %s %s" % type(e), e
 
@@ -129,7 +134,7 @@ def find_one(matricula):
     try:
         user = cuentas.find_one({"matricula": (matricula)})
         if user == None:
-            return "<p>La matricula %s nó existe</p>" % (matricula)
+            return "<p>La matricula %s no existe</p>" % (matricula)
         else:
             return "<p>Encontramos: %s </p>" % (user)
     except Exception as e:
@@ -140,7 +145,7 @@ def delete_one(matricula):
     try:
         user = cuentas.delete_one({"matricula": (matricula)})
         if user.deleted_count == None:
-            return "<p>La matricula %s nó existe</p>" % (matricula)
+            return "<p>La matricula %s no existe</p>" % (matricula)
         else:
             #return "<p>Eliminamos %d matricula: %s </p>" % (user.deleted_count, matricula)
             return redirect(url_for("usuarios"))
@@ -148,6 +153,8 @@ def delete_one(matricula):
         return "%s" % e
 
 @app.route("/update", methods = ["POST"])
+
+
 def update():
     try:
         filter = {"matricula": request.form["matricula"]} #Create a search object
